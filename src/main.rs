@@ -17,14 +17,26 @@ struct Cli {
 
     #[structopt(short = "p", long = "rsync_param", default_value = "")]
     rsync_param: String,
+
+    #[structopt(short = "d", long = "disable-git", default_value = "")]
+    disable_git: String,
+
+    #[structopt(short = "v", default_value = "")]
+    show_log: String,
 }
 
 fn main() {
     let res = get_git_edit();
     let async_res  = async_by_log(res.clone());
-    println!("File list: {:?}", &async_res);
+    let Cli { disable_git, show_log, .. } = Cli::from_args();
+    if show_log.len() > 0 {
+        println!("File list: {:?}", &async_res);
+    }
     for file in async_res {
         call_rsync(file);
+    }
+    if disable_git.len() == 0 {
+        call_rsync(".git".to_string());
     }
 }
 
@@ -81,7 +93,7 @@ fn get_dir(path: String) -> String {
  */
 fn call_rsync(path: String) {
     let opt = Cli::from_args();
-    let Cli { local_path, remote_path, user_ip, rsync_param } = &opt;
+    let Cli { local_path, remote_path, user_ip, rsync_param, .. } = &opt;
     let orig_path = format!("{}/{}", local_path, &path);
     let tgt_path = get_dir(format!("{}:{}/{}", &user_ip, &remote_path, &path));
     let cmd = format!("-av{}", rsync_param);
